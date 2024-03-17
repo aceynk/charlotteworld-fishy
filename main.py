@@ -1,6 +1,7 @@
 # main imports
 import discord
 import random
+import os
 
 import asyncio as asy
 
@@ -15,7 +16,10 @@ import botstate
 intents = discord.Intents.default()
 intents.message_content = True
 
-TOKEN = open("botkey","r").read()
+if os.path.exists("botkey"):
+    TOKEN = open("botkey","r").read()
+else:
+    TOKEN = os.getenv('TOKEN')
 
 bot = commands.Bot(command_prefix=botstate.get_key("prefix"), intents=intents)
 
