@@ -16,10 +16,7 @@ import botstate
 intents = discord.Intents.default()
 intents.message_content = True
 
-if os.path.exists("botkey"):
-    TOKEN = open("botkey","r").read()
-else:
-    TOKEN = os.getenv('TOKEN')
+TOKEN = open("botkey","r").read()
 
 bot = commands.Bot(command_prefix=botstate.get_key("prefix"), intents=intents)
 
