@@ -4,6 +4,7 @@
     363087004403236864
   ],
   "cogs": [
-    "cogs.dev"
+    "cogs.dev",
+    "cogs.fish"
   ]
 }

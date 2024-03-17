@@ -1,3 +1,5 @@
 botkey
 __pycache__
 old
+botstate.json
+profiles.json

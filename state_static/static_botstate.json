@@ -1,0 +1,9 @@
+{
+    "prefix": "!",
+    "trusted": [
+    ],
+    "cogs": [
+      "cogs.dev",
+      "cogs.fish"
+    ]
+  }

@@ -25,7 +25,7 @@ class dev(commands.Cog):
     @commands.check(util.is_mod)
     async def fs_load(self,ctx,*extensions):
         for ext in extensions:
-            await self.bot.load_extension(ext)
+            await self.bot.load_extension("cogs." + ext)
             print(f"Successfully loaded extensions {extensions}.")
             await ctx.send(f"Successfully loaded extensions {extensions}.")
     
@@ -34,7 +34,7 @@ class dev(commands.Cog):
     @commands.check(util.is_mod)
     async def fs_unload(self,ctx,*extensions):
         for ext in extensions:
-            await self.bot.unload_extension(ext)
+            await self.bot.unload_extension("cogs." + ext)
             print(f"Successfully unloaded extensions {extensions}.")
             await ctx.send(f"Successfully unloaded extensions {extensions}.")
 
@@ -43,7 +43,7 @@ class dev(commands.Cog):
     @commands.check(util.is_mod)
     async def fs_reload(self,ctx,*extensions):
         for ext in extensions:
-            await self.bot.reload_extension(ext)
+            await self.bot.reload_extension("cogs." + ext)
             print(f"Successfully reloaded extensions {extensions}.")
             await ctx.send(f"Successfully reloaded extensions {extensions}.")
 
@@ -63,6 +63,36 @@ class dev(commands.Cog):
     async def fs_trust(self,ctx,member: discord.Member):
         botstate.add_to_key("trusted",member.id)
         await ctx.send(f"Added {member.name} to trusted users.")
+
+    @commands.command(name="untrust")
+    @commands.check(util.is_mod)
+    async def fs_untrust(self,ctx,member: discord.Member):
+        trusted = botstate.get_key("trusted")
+        trusted.remove(member.id)
+        botstate.set_key("trusted",trusted)
+        await ctx.send(f"Removed {member.name} from trusted users.")
+
+    @commands.command(name="add_cogs")
+    @commands.check(util.is_mod)
+    async def fs_add_cogs(self,ctx,*cogs):
+        cur_cogs = botstate.get_key("cogs")
+        cur_cogs.extend(["cogs." + x for x in cogs])
+        botstate.set_key("cogs",cur_cogs)
+
+        for ext in cogs:
+            await self.bot.load_extension("cogs." + ext)
+        await ctx.send(f"Successfully loaded {cogs}.")
+
+    @commands.command(name="remove_cogs")
+    @commands.check(util.is_mod)
+    async def fs_remove_cogs(self,ctx,*cogs):
+        cur_cogs = botstate.get_key("cogs")
+        for cog in cogs:
+            cur_cogs.remove("cogs." + cog)
+            await self.bot.unload_extension("cogs." + cog)
+        
+        botstate.set_key("cogs",cur_cogs)
+        await ctx.send(f"Successfully unloaded {cogs}.")
 
 ### end cog ###
 
