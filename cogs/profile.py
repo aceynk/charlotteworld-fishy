@@ -16,6 +16,8 @@ class profile(commands.Cog):
         pass
 
 
+    def add_items(self, items):
+        pass
 
 async def setup(bot):
     # init cog

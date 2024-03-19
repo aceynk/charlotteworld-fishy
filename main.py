@@ -57,7 +57,13 @@ async def on_command_error(ctx, error):
         return
     
     if isinstance(error, commands.CheckFailure):
-        await ctx.send(random.choice(open("trustissues","r").readlines()))
+        if not await no_dms(ctx):
+            await ctx.send("Sorry, this bot cannot be used in DMs.")
+        elif not await allowed_channels(ctx):
+            await ctx.send("Sorry, you can't use this bot in this channel.")
+        else:
+            await ctx.send(random.choice(open(os.path.join(util.LOC,"trustissues.txt"),"r").readlines()))
+        return
     
     await log_error(f'{ctx.message.content}: ```\n{error}\n```')
     await ctx.send("An error occurred when running that command.")
@@ -69,9 +75,18 @@ async def on_command_error(ctx, error):
 @bot.check
 async def no_dms(ctx):
     if ctx.guild is None:
-        await ctx.send("Sorry, this bot cannot be used in DMs.")
         return False
     return True
+
+@bot.check
+async def allowed_channels(ctx):
+    if (
+        ctx.channel.id in botstate.get_key("allowed_channels") or 
+        (not ctx.cog is None and ctx.cog.__cog_name__ == "dev") or 
+        ctx.author.id in botstate.get_key("trusted")
+    ):
+        return True
+    return False
 
 #### end bot checks ####
 

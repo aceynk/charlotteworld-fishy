@@ -97,6 +97,24 @@ class dev(commands.Cog):
         botstate.set_key("cogs",cur_cogs)
         await ctx.send(f"Successfully unloaded {cogs}.")
 
+
+    @commands.command(name="whitelist")
+    @commands.check(util.is_mod)
+    async def fs_whitelist(self,ctx,channel: discord.TextChannel):
+        cur_channels = botstate.get_key("allowed_channels")
+        cur_channels.append(channel.id)
+        botstate.set_key("allowed_channels",cur_channels)
+        await ctx.send(f"Whitelisted {channel.name}.")
+
+
+    @commands.command(name="blacklist")
+    @commands.check(util.is_mod)
+    async def fs_blacklist(self,ctx,channel: discord.TextChannel):
+        cur_channels = botstate.get_key("allowed_channels")
+        cur_channels.remove(channel.id)
+        botstate.set_key("allowed_channels",cur_channels)
+        await ctx.send(f"Blacklisted {channel.name}.")
+
 ### end cog ###
 
 async def setup(bot):

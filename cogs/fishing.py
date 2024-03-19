@@ -84,6 +84,10 @@ class fishing(commands.Cog):
                 
         await ctx.send(output + "\n\n" + emoji_output)
 
+    @commands.command(name="recycle")
+    async def fs_recycle(self,ctx):
+        pass
+
 
 async def setup(bot):
     # init cog
