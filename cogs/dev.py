@@ -7,7 +7,7 @@ from discord.ext import commands
 import util
 import botstate
 
-### start cog ###
+### cog ###
 
 class dev(commands.Cog):
     def __init__(self, bot):
@@ -64,6 +64,7 @@ class dev(commands.Cog):
         botstate.add_to_key("trusted",member.id)
         await ctx.send(f"Added {member.name} to trusted users.")
 
+
     @commands.command(name="untrust")
     @commands.check(util.is_mod)
     async def fs_untrust(self,ctx,member: discord.Member):
@@ -71,6 +72,7 @@ class dev(commands.Cog):
         trusted.remove(member.id)
         botstate.set_key("trusted",trusted)
         await ctx.send(f"Removed {member.name} from trusted users.")
+
 
     @commands.command(name="add_cogs")
     @commands.check(util.is_mod)
@@ -82,6 +84,7 @@ class dev(commands.Cog):
         for ext in cogs:
             await self.bot.load_extension("cogs." + ext)
         await ctx.send(f"Successfully loaded {cogs}.")
+
 
     @commands.command(name="remove_cogs")
     @commands.check(util.is_mod)
