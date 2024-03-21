@@ -27,7 +27,7 @@ class dev(commands.Cog):
         for ext in extensions:
             await self.bot.load_extension("cogs." + ext)
             print(f"Successfully loaded extensions {extensions}.")
-            await ctx.send(f"Successfully loaded extensions {extensions}.")
+        await ctx.send(f"Successfully loaded extensions {extensions}.")
     
 
     @commands.command(name="unload")
@@ -36,7 +36,7 @@ class dev(commands.Cog):
         for ext in extensions:
             await self.bot.unload_extension("cogs." + ext)
             print(f"Successfully unloaded extensions {extensions}.")
-            await ctx.send(f"Successfully unloaded extensions {extensions}.")
+        await ctx.send(f"Successfully unloaded extensions {extensions}.")
 
 
     @commands.command(name="reload")
@@ -45,7 +45,7 @@ class dev(commands.Cog):
         for ext in extensions:
             await self.bot.reload_extension("cogs." + ext)
             print(f"Successfully reloaded extensions {extensions}.")
-            await ctx.send(f"Successfully reloaded extensions {extensions}.")
+        await ctx.send(f"Successfully reloaded extensions {extensions}.")
 
 
     @commands.command(name="end", aliases=["stop", "kill", "shutdown"])
