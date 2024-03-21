@@ -18,8 +18,17 @@ class fishing(commands.Cog):
 
     @commands.command(name="fish", aliases=["f","fishy","catch","cutes"])
     async def fs_fish(self,ctx):
+        util.profile_check(ctx.author)
+        util.update_bait(ctx.author)
+
         cur_profile = profile
         cur_profile.set_id(ctx.author.id)
+
+        if not gk(ctx.author.id, "bait") >= 1:
+            await ctx.send("You do not have enough bait to fish!")
+            return
+        else:
+            ak(ctx.author.id, "bait", -1)
 
         
         # get weight category
@@ -33,6 +42,8 @@ class fishing(commands.Cog):
         # open fish json
 
         fishes = json.load(open(os.path.join(util.LOC,"fishes.json"),"r"))
+        coins = 0
+        value = json.load(open(os.path.join(util.LOC,"value.json"),"r"))
 
         # get catch
         catch_weights = fishes[cat_choice]["weights"]
@@ -46,8 +57,12 @@ class fishing(commands.Cog):
 
         if catch["name"] == "Unique-Fish":
             catch["name"] = util.get_unique_fish()
-        if catch["name"] == "Unique-Item":
+            coins += value["Unique"]
+        elif catch["name"] == "Unique-Item":
             catch["name"] = util.get_unique_item()
+            coins += value["Unique"]
+        else:
+            coins += value[catch["name"]]
 
         # get bonus items
         bonus = []
@@ -80,7 +95,7 @@ class fishing(commands.Cog):
         print(bonus)
 
         emoji_output = f"{emoji.get_emoji(catch['name'])}"
-        output = f"## Fishing Complete! 🎣\nYou caught a **{catch['name']}**\nPrice: {catch['price']}"
+        output = f"## Fishing Complete! 🎣\nYou caught a **{catch['name']}**\n"
 
         if bonus:
             output += f"\n\nYou got bonus items!\n"
@@ -89,16 +104,24 @@ class fishing(commands.Cog):
             for i in bonus_set:
                 emoji_output += (emoji.get_emoji(i)) * bonus.count(i)
                 output += f"* {bonus.count(i)}x {i}\n"
+                if i in fishes["trash"]:
+                    coins += value["Trash"] * bonus.count(i)
+                else:
+                    coins += value[i] * bonus.count(i)
                 
             output = output[:-1]
 
         cur_profile.add_items(bonus)
         cur_profile.add_fish(catch["name"])
+        ak(ctx.author.id, "money", coins)
                 
-        await ctx.send(output + "\n\n" + emoji_output)
+        await ctx.send(output + f"\nCoins Earned: {coins}\n\n" + emoji_output)
 
     @commands.command(name="recycle")
     async def fs_recycle(self,ctx,amount):
+        util.profile_check(ctx.author)
+        util.update_bait(ctx.author)
+
         cur_profile = profile
         cur_profile.set_id(ctx.author.id)
 
@@ -116,6 +139,36 @@ class fishing(commands.Cog):
                 sk(ctx.author.id, ["consumables","trash"], {"amount": rm_success})
         else:
             await ctx.send(f"You don't have {amount} trash!")
+
+    
+    @commands.command(name="leaderboard", aliases=["lb"])
+    async def fs_leaderboard(self, ctx, key):
+        profiles = json.load(open(os.path.join(util.LOC, "profiles.json"),"r"))
+        key_locs = json.load(open(os.path.join(util.LOC, "key_loc.json"),"r"))
+
+        if key in key_locs.keys():
+            candidates = []
+            for x in profiles.keys():
+                try:
+                    candidates.append(( (await ctx.author.guild.fetch_member(int(x))).display_name , gk(x, key_locs[key])))
+                except:
+                    continue
+            
+            if not candidates:
+                await ctx.send("Sorry, no one has this item!")
+                return
+            
+            candidates.sort(key=lambda x : x[1])
+            candidates = candidates[:20]
+
+            output = f"Leaderboard for *{key}*:\n"
+            output += "".join(f"{i}. {val[0]} - **{val[1]}**\n" for i,val in enumerate(candidates))
+
+            await ctx.send(output)
+        else:
+            quote = '"'
+            await ctx.send(f"Could not find that item. {random.choice(['Does it exist?', 'Check your spelling.', f'Is {quote}{util.sanitize(key)}{quote} really what you meant to type?'])}")
+        
 
 
 

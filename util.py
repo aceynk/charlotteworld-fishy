@@ -1,10 +1,13 @@
 # main imports
 import os
 import random
-import discord
+import math
+import json
+import time
 
 # local imports
 import botstate
+from cogs.profile import sk,ak
 
 LOC = os.path.split(os.path.realpath(__file__))[0]
 
@@ -76,4 +79,49 @@ def even_spread(l_max, amount):
     return l_max
 
 def split_message(string):
-    return [string[i:i+min(len(string) - 2000*i, 2000)] for i in range(0, len(string), 2000)]
+    out_l = []
+    while string != "":
+        test_split = string[:2000]
+        first_nl = test_split[::-1].index("\n")
+        out_l.append(string[:2000-first_nl])
+        string = string[2000-first_nl:]
+
+    return out_l
+
+def profile_check(user):
+    profile = json.load(open(os.path.join(LOC, "profiles.json"),"r"))
+    base_profile = json.load(open(os.path.join(LOC, "base_profile.json"),"r"))
+
+    if not str(user.id) in profile.keys():
+        profile[str(user.id)] = base_profile
+
+    json.dump(profile, open(os.path.join(LOC, "profiles.json"),"w"), indent=2)
+
+def update_bait(user):
+    profile = json.load(open(os.path.join(LOC, "profiles.json"),"r"))
+
+    user_profile = profile[str(user.id)]
+    if user_profile["last_bait"] == -1:
+        sk(user.id, "bait", 1)
+        sk(user.id, "last_bait", round(time.time()))
+    else:
+        hours_since = (round(time.time()) - user_profile["last_bait"]) // 3600
+        seconds_since_update = (round(time.time()) - user_profile["last_bait"]) - 3600 * hours_since
+
+        ak(user.id, "bait", min(48,hours_since))
+        sk(user.id, "last_bait", round(time.time()) - seconds_since_update)
+
+def format_time(s):
+    output = []
+    if s >= 3600:
+        output.append(f"{s // 3600} hour(s)")
+        s %= 3600
+    
+    if s >= 60:
+        output.append(f"{s // 60} minute(s)")
+        s %= 60
+
+    if s:
+        output.append(f"{s} second(s)")
+
+    return ", ".join(output)

@@ -3,6 +3,7 @@ import os
 import json
 import discord
 import operator
+import time
 
 import asyncio as asy
 
@@ -67,51 +68,56 @@ class profile(commands.Cog):
 
 
     @commands.command(name="profile", aliases=["p"])
-    async def fs_profile(self,ctx,acc: discord.Member = None):
+    async def fs_profile(self,ctx):
+        util.profile_check(ctx.author)
+        util.update_bait(ctx.author)
+
         acc_id = str(ctx.author.id)
         self.id = acc_id
         fishes = json.load(open(os.path.join(util.LOC,"fishes.json"),"r"))
 
-        if acc is None:
-            output = f"## Fishy Profile for {util.get_nick(ctx.author)}"
-            output += f"\nYou have **{gk(acc_id, 'money')}** FishCoin(s)"
-            weights = self.get_base_weights()
-            output += f"\n\nYou have a **{weights[0]/10}**% chance to catch a Normal fish."
-            if len(set(gk(self.id, "fish").keys()).intersection([x["name"] for x in fishes["difficult"]["catches"]])) > 0:
-                output += f"\nYou have a **{weights[1]/10}**% chance to catch a *Difficult* fish."
-            
-            if len(set(gk(self.id, "fish").keys()).intersection([x["name"] for x in fishes["challenging"]["catches"]])) > 0:
-                output += f"\nYou have a **{weights[2]/10}**% chance to catch a **Challenging** fish."
+        output = f"## Fishy Profile for {util.get_nick(ctx.author)}"
+        output += f"\nYou have **{gk(acc_id, 'money')}** FishCoin(s)"
+        output += f"\nYou have **{gk(acc_id, 'bait')}** bait."
+        output += f"\nYou have **{util.format_time(3600 - (round(time.time()) - gk(acc_id, 'last_bait')))}** until your next bait."
+        weights = self.get_base_weights()
+        output += f"\n\nYou have a **{weights[0]/10}**% chance to catch a Normal fish."
 
-            if len(set(gk(self.id, "fish").keys()).intersection([x["name"] for x in fishes["legendary"]["catches"]])) > 0:
-                output += f"\nYou have a **{weights[3]/10}**% chance to catch a *LEGENDARY* fish."
+        if len(set(gk(self.id, "fish").keys()).intersection([x["name"] for x in fishes["difficult"]["catches"]])) > 0:
+            output += f"\nYou have a **{weights[1]/10}**% chance to catch a *Difficult* fish."
+        
+        if len(set(gk(self.id, "fish").keys()).intersection([x["name"] for x in fishes["challenging"]["catches"]])) > 0:
+            output += f"\nYou have a **{weights[2]/10}**% chance to catch a **Challenging** fish."
 
-            if len(set(gk(self.id, "fish").keys()).intersection([x["name"] for x in fishes["unique"]["catches"]])) > 0:
-                output += f"\nYou have a **{weights[4]/10}**% chance to catch a **UNIQUE** fish."
+        if len(set(gk(self.id, "fish").keys()).intersection([x["name"] for x in fishes["legendary"]["catches"]])) > 0:
+            output += f"\nYou have a **{weights[3]/10}**% chance to catch a *LEGENDARY* fish."
+
+        if gk(self.id, "uniques"):
+            output += f"\nYou have a **{weights[4]/10}**% chance to catch a **UNIQUE** fish."
 
 
-            output += "\n"
+        output += "\n"
 
 
-            for key,val in gk(self.id, ["fish"]).items():
-                if val["amount"] > 0:
-                    output += f"\nYou have {val['amount']} {key}(s)! ({emoji.get_emoji(key)})"
+        for key,val in gk(self.id, ["fish"]).items():
+            if val["amount"] > 0:
+                output += f"\nYou have **{val['amount']}** {key}(s)! ({emoji.get_emoji(key)})"
 
-            output += "\n"
+        output += "\n"
 
-            for key,val in gk(self.id, ["items"]).items():
-                if val["amount"] > 0:
-                    output += f"\nYou have {val['amount']} {key}(s)! ({emoji.get_emoji(key)})"
+        for key,val in gk(self.id, ["items"]).items():
+            if val["amount"] > 0:
+                output += f"\nYou have **{val['amount']}** {key}(s)! ({emoji.get_emoji(key)})"
 
-            if gk(self.id, "uniques"):
-                output += "\n\nYou have the following Uniques:\n"
+        if gk(self.id, "uniques"):
+            output += "\n\nYou have the following Uniques:\n"
 
-                for i in set(gk(self.id, "uniques")):
-                    output += f"**{i}**"
+            for i in set(gk(self.id, "uniques")):
+                output += f"**{i}**\n"
 
         for i in util.split_message(output):
             await ctx.send(i)
-            asy.sleep(0.5)
+            await asy.sleep(0.5)
 
 
     def add_items(self, items):

@@ -7,49 +7,52 @@ import util
 
 #### cog ####
 class emoji(commands.Cog):
-    EMOJI = {
-        "Unknown": "❓",
+    def __init__(self,bot):
+        self.bot = bot
+        self.EMOJI = {
+            "Unknown": "❓",
 
-        "Minnow": "🐟",
-        "Halibut": "🐠",
-        "Smelt": "🐟",
+            "Minnow": "🐟",
+            "Halibut": "🐠",
+            "Smelt": "🐟",
 
-        "Salmon": "🐟",
-        "Crab": "🦀",
-        "Sea Nettle": "🪼",
-        "Sardine": "🐟",
+            "Salmon": "🐠",
+            "Crab": "🦀",
+            "Sea Nettle": "🪼",
+            "Sardine": "🐟",
 
-        "Squid": "🦑",
+            "Squid": "🦑",
+            "Rockfish": "🪨",
 
-        "Swordfish": "🐠",
+            "Swordfish": "🗡️",
 
-        "Unique-Fish": "🐟",
-        "Unique-Item": "⚔️",
+            "Unique-Fish": "🐟",
+            "Unique-Item": "⚔️",
 
-        "Bottle": "🍾",
-        "Boot": "🥾",
-        "Tire": "🚗",
-        "Cup": "🥤",
-        "Plastic": "🎈",
+            "Bottle": "🍾",
+            "Boot": "🥾",
+            "Tire": "🚗",
+            "Cup": "🥤",
+            "Plastic": "🎈",
 
-        "Seaweed": "🌿",
-        "Glistening Coin": "🪙",
+            "Seaweed": "🌿",
+            "Glistening Coin": "🪙",
 
-        "Trout": "🐟",
-        "Cod": "🐟",
-        "Slug": "🐌",
-        "Urchin": "🗯️",
-        "Jellyfish": "🪼",
-        "Ray": "🐟",
-        "Shell": "🐚",
+            "Trout": "🐟",
+            "Cod": "🐟",
+            "Slug": "🐌",
+            "Urchin": "🗯️",
+            "Jellyfish": "🪼",
+            "Ray": "🐟",
+            "Shell": "🐚",
 
-        "Shield": "🛡️",
-        "Debris": "🪨",
-        "Sword": "🗡️",
-        "Clock": "🕐",
-        "Knife": "🔪",
-        "Key": "🔑"
-    }
+            "Shield": "🛡️",
+            "Debris": "🪨",
+            "Sword": "🗡️",
+            "Clock": "🕐",
+            "Knife": "🔪",
+            "Key": "🔑"
+        }
 
 
     def get_emoji(self, name):
