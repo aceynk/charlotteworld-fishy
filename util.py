@@ -7,7 +7,7 @@ import time
 
 # local imports
 import botstate
-from cogs.profile import sk,ak
+from cogs.profile import sk,ak,gk
 
 LOC = os.path.split(os.path.realpath(__file__))[0]
 
@@ -88,14 +88,17 @@ def split_message(string):
 
     return out_l
 
+
 def profile_check(user):
     profile = json.load(open(os.path.join(LOC, "profiles.json"),"r"))
     base_profile = json.load(open(os.path.join(LOC, "base_profile.json"),"r"))
 
     if not str(user.id) in profile.keys():
         profile[str(user.id)] = base_profile
+        profile[str(user.id)]["display_name"] = user.display_name
 
     json.dump(profile, open(os.path.join(LOC, "profiles.json"),"w"), indent=2)
+
 
 def update_bait(user):
     profile = json.load(open(os.path.join(LOC, "profiles.json"),"r"))
@@ -108,7 +111,12 @@ def update_bait(user):
         hours_since = (round(time.time()) - user_profile["last_bait"]) // 3600
         seconds_since_update = (round(time.time()) - user_profile["last_bait"]) - 3600 * hours_since
 
-        ak(user.id, "bait", min(48,hours_since))
+        if "optimized_bait" in gk(user.id, "upgrades"):
+            upgrade = gk(user.id, ["upgrades","optimized_bait","amount"])
+        else:
+            upgrade = 0
+
+        ak(user.id, "bait", min(48 * (1 + 0.2 * upgrade),hours_since * (1 + 0.2 * upgrade)))
         sk(user.id, "last_bait", round(time.time()) - seconds_since_update)
 
 def format_time(s):

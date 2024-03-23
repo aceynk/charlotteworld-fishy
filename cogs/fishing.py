@@ -9,14 +9,23 @@ from discord.ext import commands
 
 # local imports
 import util
+import shop
+
 from .profile import gk,sk,ak
+
 
 class fishing(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
 
-    @commands.command(name="fish", aliases=["f","fishy","catch","cutes"])
+    @commands.command(
+        name="fish", 
+        aliases=["f","fishy","catch","cutes"],
+        brief="Lets you fish!",
+        help="Use ![fish|f|fishy|catch|cutes] to catch fish (and more!?)\nThe items you obtain here are visible in your profile!",
+        description="Lets you fish!"
+        )
     async def fs_fish(self,ctx):
         util.profile_check(ctx.author)
         util.update_bait(ctx.author)
@@ -117,8 +126,18 @@ class fishing(commands.Cog):
                 
         await ctx.send(output + f"\nCoins Earned: {coins}\n\n" + emoji_output)
 
-    @commands.command(name="recycle")
-    async def fs_recycle(self,ctx,amount):
+
+    @commands.command(
+        name="recycle",
+        brief="Recycle items",
+        help="Lets you recycle items with !recycle <amount>.\nYou have a feeling this might help you in some way.",
+        description="Lets you recycle items."
+        )
+    async def fs_recycle(self,ctx,amount=None):
+        if amount is None:
+            await ctx.send("You need to provide an amount! Please provide an integer or \"all\".")
+            return
+
         util.profile_check(ctx.author)
         util.update_bait(ctx.author)
 
@@ -141,8 +160,20 @@ class fishing(commands.Cog):
             await ctx.send(f"You don't have {amount} trash!")
 
     
-    @commands.command(name="leaderboard", aliases=["lb"])
-    async def fs_leaderboard(self, ctx, key):
+    @commands.command(
+        name="leaderboard",
+        aliases=["lb"],
+        brief="Shows a leaderboard",
+        help="Lets you see a leaderboard with ![leaderboard|lb] <item>.\nFor items with spaces, replace them with hyphens (-) or underscores (_)."
+        )
+    async def fs_leaderboard(self, ctx, key=None):
+        if key is None:
+            await ctx.send("You need to provide a key!")
+            return
+
+        key = key.lower()
+        key = key.replace("-", " ").replace("_", " ")
+
         profiles = json.load(open(os.path.join(util.LOC, "profiles.json"),"r"))
         key_locs = json.load(open(os.path.join(util.LOC, "key_loc.json"),"r"))
 
@@ -150,7 +181,7 @@ class fishing(commands.Cog):
             candidates = []
             for x in profiles.keys():
                 try:
-                    candidates.append(( (await ctx.author.guild.fetch_member(int(x))).display_name , gk(x, key_locs[key])))
+                    candidates.append((profiles[x]["display_name"], gk(x, key_locs[key], profile=profiles)))
                 except:
                     continue
             
@@ -158,11 +189,11 @@ class fishing(commands.Cog):
                 await ctx.send("Sorry, no one has this item!")
                 return
             
-            candidates.sort(key=lambda x : x[1])
+            candidates.sort(key=lambda x : x[1], reverse=True)
             candidates = candidates[:20]
 
             output = f"Leaderboard for *{key}*:\n"
-            output += "".join(f"{i}. {val[0]} - **{val[1]}**\n" for i,val in enumerate(candidates))
+            output += "".join(f"{i}. {val[0]} - **{round(val[1],1)}**\n" for i,val in enumerate(candidates))
 
             await ctx.send(output)
         else:
@@ -170,7 +201,70 @@ class fishing(commands.Cog):
             await ctx.send(f"Could not find that item. {random.choice(['Does it exist?', 'Check your spelling.', f'Is {quote}{util.sanitize(key)}{quote} really what you meant to type?'])}")
         
 
+    @commands.command(
+        name="shop",
+        aliases=["buy"],
+        brief="Buy things!",
+        help="Buy items and upgrades with !shop <item>, or view the shop listing with !shop.",
+        description="Command to buy things"
+        )
+    async def fs_shop(self,ctx,*,item=None):
+        user_prof = json.load(open(os.path.join(util.LOC, "profiles.json"),"r"))[str(ctx.author.id)]
 
+        if item is None:
+            shoptext = "## Fishy Shop\nBuy items with !shop <item>\n\n"
+
+            for upgrade in shop.SHOP.keys():
+                if upgrade in user_prof["upgrades"].keys():
+                    amount = user_prof["upgrades"][upgrade]["amount"]
+                else:
+                    sk(ctx.author.id, ["upgrades",upgrade], {"amount": 0})
+                    amount = 0
+
+                price = [x(amount) for x in shop.SHOP[upgrade]["price"]]
+                shoptext += f"* {upgrade.replace('_',' ').title()} - " + ", ".join(f"{shop.SHOP[upgrade]['item_name'][ind]} {emoji.get_emoji(shop.SHOP[upgrade]['item_name'][ind])} **x{v}**" for ind, v in enumerate(price) if v != 0) + f"\n * {shop.SHOP[upgrade]['description']}"
+
+            await ctx.send(shoptext)
+            return
+
+        if item.lower().replace(" ","_") in shop.SHOP.keys():
+            item = item.lower().replace(" ","_")
+        else:
+            await ctx.send("Couldn't find that shop item!")
+            return
+
+        if item in user_prof["upgrades"].keys():
+            amount = user_prof["upgrades"][item]["amount"]
+        else:
+            sk(ctx.author.id, ["upgrades",item], {"amount": 0})
+            amount = 0
+
+        price = [x(amount) for x in shop.SHOP[item]["price"]]
+
+        if (itemset := set(v for i,v in enumerate(shop.SHOP[item]["item_name"]) if price[i] != 0)).intersection(gk(ctx.author.id, "upgrades").keys()) == len(itemset):
+            print("fails at first.")
+            ctx.send("You don't have enough to trade for this item!")
+            return
+
+        sufficient_check = all(v <= gk(ctx.author.id, shop.SHOP[item]["item_path"][i]) for i,v in enumerate(price) if v != 0)
+
+        if not sufficient_check:
+            print("fails at second")
+            await ctx.send("You don't have enough to trade for this item!")
+            return
+        else:
+            for i,v in enumerate(price):
+                if v == 0:
+                    continue
+
+                ak(ctx.author.id, shop.SHOP[item]["item_path"][i], -v)
+
+            if item in gk(ctx.author.id, "upgrades").keys():
+                ak(ctx.author.id, ["upgrades",item,"amount"], 1)
+            else:
+                sk(ctx.author.id, ["upgrades", item], {"amount": 1})
+
+            await ctx.send(f"Successfully bought 1 {item.title().replace('_',' ')}")
 
 
 async def setup(bot):
@@ -180,6 +274,6 @@ async def setup(bot):
     global emoji
     global profile
     emoji = bot.get_cog("emoji")
-    profile = bot.get_cog("profile")
+    profile = bot.get_cog("profiles")
 
     await bot.add_cog(cog)

@@ -115,9 +115,20 @@ class dev(commands.Cog):
         botstate.set_key("allowed_channels",cur_channels)
         await ctx.send(f"Blacklisted {channel.name}.")
 
+    
+    @commands.command()
+    @commands.check(util.is_mod)
+    async def update_display_names(self, ctx):
+        await profile.cache_display_names()
+        await ctx.send("Successfully cached display names for all users.")
+
 ### end cog ###
 
 async def setup(bot):
     # init cog
     cog = dev(bot)
+
+    global profile
+    profile = bot.get_cog("profiles")
+
     await bot.add_cog(cog)

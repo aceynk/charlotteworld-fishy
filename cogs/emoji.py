@@ -51,7 +51,9 @@ class emoji(commands.Cog):
             "Sword": "🗡️",
             "Clock": "🕐",
             "Knife": "🔪",
-            "Key": "🔑"
+            "Key": "🔑",
+
+            "FishCoin": "🪙"
         }
 
 

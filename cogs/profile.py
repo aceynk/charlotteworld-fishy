@@ -7,7 +7,7 @@ import time
 
 import asyncio as asy
 
-from discord.ext import commands
+from discord.ext import commands, tasks
 from functools import reduce
 
 # local imports
@@ -54,11 +54,11 @@ def ak(id, key, val, profile=None):
     else:
         cur_val += val
 
-    sk(id, key, cur_val)
+    sk(id, key, round(cur_val,1))
 
 
 #### cog ####
-class profile(commands.Cog):
+class profiles(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
@@ -67,7 +67,13 @@ class profile(commands.Cog):
         self.id = str(id)
 
 
-    @commands.command(name="profile", aliases=["p"])
+    @commands.command(
+        name="profile", 
+        aliases=["p"],
+        brief="Allows you to see your profile",
+        help="Allows you to see your profile by running !p[rofile].\n Shows stats like your money, fish caught, general items, etc.",
+        description="See your profile"
+        )
     async def fs_profile(self,ctx):
         util.profile_check(ctx.author)
         util.update_bait(ctx.author)
@@ -77,23 +83,27 @@ class profile(commands.Cog):
         fishes = json.load(open(os.path.join(util.LOC,"fishes.json"),"r"))
 
         output = f"## Fishy Profile for {util.get_nick(ctx.author)}"
-        output += f"\nYou have **{gk(acc_id, 'money')}** FishCoin(s)"
-        output += f"\nYou have **{gk(acc_id, 'bait')}** bait."
+        output += f"\nYou have **{round(gk(acc_id, 'money'),1)}** FishCoin(s)"
+        output += f"\nYou have **{round(gk(acc_id, 'bait'),1)}** bait."
         output += f"\nYou have **{util.format_time(3600 - (round(time.time()) - gk(acc_id, 'last_bait')))}** until your next bait."
+        
+        if "optimized_bait" in gk(acc_id, "upgrades") and gk(acc_id, ["upgrades","optimized_bait","amount"]) > 0:
+            output += f'\nYou get **{round(1 + 0.2 * gk(acc_id, ["upgrades","optimized_bait","amount"]),1)}** bait per hour'
+        
         weights = self.get_base_weights()
         output += f"\n\nYou have a **{weights[0]/10}**% chance to catch a Normal fish."
 
         if len(set(gk(self.id, "fish").keys()).intersection([x["name"] for x in fishes["difficult"]["catches"]])) > 0:
-            output += f"\nYou have a **{weights[1]/10}**% chance to catch a *Difficult* fish."
+            output += f"\nYou have a **{round(weights[1]/10,1)}**% chance to catch a *Difficult* fish."
         
         if len(set(gk(self.id, "fish").keys()).intersection([x["name"] for x in fishes["challenging"]["catches"]])) > 0:
-            output += f"\nYou have a **{weights[2]/10}**% chance to catch a **Challenging** fish."
+            output += f"\nYou have a **{round(weights[2]/10,1)}**% chance to catch a **Challenging** fish."
 
         if len(set(gk(self.id, "fish").keys()).intersection([x["name"] for x in fishes["legendary"]["catches"]])) > 0:
-            output += f"\nYou have a **{weights[3]/10}**% chance to catch a *LEGENDARY* fish."
+            output += f"\nYou have a **{round(weights[3]/10,1)}**% chance to catch a *LEGENDARY* fish."
 
         if gk(self.id, "uniques"):
-            output += f"\nYou have a **{weights[4]/10}**% chance to catch a **UNIQUE** fish."
+            output += f"\nYou have a **{round(weights[4]/10,1)}**% chance to catch a **UNIQUE** fish."
 
 
         output += "\n"
@@ -150,6 +160,7 @@ class profile(commands.Cog):
 
         if amount.lower() == "all":
             amount = sum(spread_max)
+        else: amount = int(amount)
 
         if amount > sum(spread_max):
             return 0
@@ -181,11 +192,25 @@ class profile(commands.Cog):
                 sk(self.id, ["consumables","trash","amount"],0)
 
 
+    async def cache_display_names(self):
+        profiles = json.load(open(os.path.join(util.LOC,"profiles.json"),"r"))
+
+        guild = await self.bot.fetch_guild(1209999456360202330)
+        
+        for i in profiles.keys():
+            sk(i, "display_name", ((await guild.fetch_member(int(i))).display_name))
+
+    
+    @tasks.loop(hours=1.0)
+    async def display_loop(self):
+        await self.cache_display_names()
+
+
 #### end cog ####
 
 async def setup(bot):
     # init cog
-    cog = profile(bot)
+    cog = profiles(bot)
 
     global emoji
     emoji = bot.get_cog("emoji")
