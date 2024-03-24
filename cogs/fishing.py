@@ -137,6 +137,10 @@ class fishing(commands.Cog):
         if amount is None:
             await ctx.send("You need to provide an amount! Please provide an integer or \"all\".")
             return
+        
+        if int(amount) < 0:
+            await ctx.send("You can't recycle negative trash!")
+            return
 
         util.profile_check(ctx.author)
         util.update_bait(ctx.author)
@@ -144,8 +148,14 @@ class fishing(commands.Cog):
         cur_profile = profile
         cur_profile.set_id(ctx.author.id)
 
+        trashlist = json.load(open(os.path.join(util.LOC,"fishes.json"),"r"))["trash"]
+
+        if sum(gk(ctx.author.id, ["items",x,"amount"]) for x in trashlist) < amount:
+            await ctx.send("You can't recycle that much trash!")
+            return
+
         rm_success = cur_profile.rm_random(
-            json.load(open(os.path.join(util.LOC,"fishes.json"),"r"))["trash"],
+            trashlist,
             amount,
             ["items"])
 
@@ -179,9 +189,12 @@ class fishing(commands.Cog):
 
         if key in key_locs.keys():
             candidates = []
+
+            sum = 0
             for x in profiles.keys():
                 try:
                     candidates.append((profiles[x]["display_name"], gk(x, key_locs[key], profile=profiles)))
+                    sum += candidates[-1][1]
                 except:
                     continue
             
@@ -194,6 +207,7 @@ class fishing(commands.Cog):
 
             output = f"Leaderboard for *{key}*:\n"
             output += "".join(f"{i}. {val[0]} - **{round(val[1],1)}**\n" for i,val in enumerate(candidates))
+            output += f"\nServer total: **{round(sum,1)}**"
 
             await ctx.send(output)
         else:
@@ -205,28 +219,31 @@ class fishing(commands.Cog):
         name="shop",
         aliases=["buy"],
         brief="Buy things!",
-        help="Buy items and upgrades with !shop <item>, or view the shop listing with !shop.",
+        help="Buy items and upgrades with !shop <amount (optional)> <item>, or view the shop listing with !shop.",
         description="Command to buy things"
         )
     async def fs_shop(self,ctx,item_amt=None,*,item=None):
         user_prof = json.load(open(os.path.join(util.LOC, "profiles.json"),"r"))[str(ctx.author.id)]
-
-        if not item_amt is None and not item_amt.isnumeric():
+                
+        if item_amt is None:
+            # should never cause issues?
+            pass
+        elif item_amt.isnumeric():
             if item is None:
-                item = item_amt
-                item_amt = 1
-            else:
-                await ctx.send("Please provide a numeric amount for shop items, or run without an amount to buy 1.")
-
-        if not item_amt is None and item is None:
-            await ctx.send("Unsure what you want. Run !shop or !buy to see a list of items.")
-            return
-        
-        if not item_amt is None:
+                await ctx.send("Unsure what you want. Please provide either an item or an item and an amount.")
+                return
             item_amt = int(item_amt)
+        else:
+            if item is None:
+                item,item_amt = (item_amt, 1)
+            elif item.isnumeric():
+                item,item_amt = (item_amt,item)
+            else:
+                await ctx.send("Unsure what you want. Please provide either an item or an item and an amount.")
+                return
 
         if item is None:
-            shoptext = "## Fishy Shop\nBuy items with !shop <item>\n\n"
+            shoptext = "## Fishy Shop\nBuy items with !shop <amount (optional)> <item>\n\n"
 
             for upgrade in shop.SHOP.keys():
                 if upgrade in user_prof["upgrades"].keys():
@@ -289,6 +306,27 @@ class fishing(commands.Cog):
                 sk(ctx.author.id, ["upgrades", item], {"amount": item_amt})
 
             await ctx.send(f"Successfully bought {item_amt} {item.title().replace('_',' ')}")
+
+    @commands.command(
+            name="tier",
+            aliases=["tiers","ranks","rankings"],
+            brief="See some fish tiers!",
+            help="Use the command ![tier|tiers|ranks|rankings] to see a list of some fish and their tier!",
+            description="A command for seeing fish tiers."
+            )
+    async def fs_tier(self,ctx):
+        output = "## Fish Tiers:\n"
+        
+        fishes = json.load(open(os.path.join(util.LOC, "fishes.json"),"r"))
+
+        for tier in fishes.keys():
+            if tier in ["allfish","trash","unique"]:
+                continue
+
+            output += f"**{tier.title()}**:\n"
+            output += "".join([f"* {x['name']} {emoji.get_emoji(x['name'])}\n" for x in fishes[tier]["catches"]])
+
+        await ctx.send(output)
 
 
 async def setup(bot):

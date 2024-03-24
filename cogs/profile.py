@@ -133,10 +133,47 @@ class profiles(commands.Cog):
             await asy.sleep(0.5)
 
 
-    #@commands.command(
+    @commands.command(
+        name="trade",
+        aliases=["gift"]
+    )
+    async def fs_trading(self,ctx,amt,item,user:discord.Member):
+        key_locs = json.load(open(os.path.join(util.LOC, "key_loc.json"),"r"))
+
+        if item in key_locs.keys():
+            item_loc = key_locs[item]
+        else:
+            await ctx.send("Either that item doesn't exist or you need to ping aceynk.")
+            return
+
+        owned_amt = gk(ctx.author.id, item_loc)
+
+        if int(amt) > owned_amt:
+            await ctx.send("You can't gift more than you have.")
+            return
         
-    #)
-    #async def fs_trading(self,ctx)
+        if not amt.isnumeric():
+            await ctx.send("You need to provide a numeric amount to gift!")
+            return
+        
+        if int(amt) < 0:
+            await ctx.send("You can't gift negative items!")
+            return
+        
+
+        
+        ak(ctx.author.id, item_loc, -int(amt))
+        ak(user.id, item_loc, int(amt))
+
+        await ctx.send(f"Successfully traded **{int(amt)}** {item.title()} to *{user.display_name}*!")
+        
+
+        
+
+            
+    @commands.command(hidden=True)
+    async def tooie(self,ctx):
+        await ctx.send("hi tooie!")
 
 
     def add_items(self, items):
