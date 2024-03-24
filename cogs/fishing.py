@@ -138,7 +138,7 @@ class fishing(commands.Cog):
             await ctx.send("You need to provide an amount! Please provide an integer or \"all\".")
             return
         
-        if int(amount) < 0:
+        if amount.isnumeric() and int(amount) < 0:
             await ctx.send("You can't recycle negative trash!")
             return
 
@@ -149,10 +149,6 @@ class fishing(commands.Cog):
         cur_profile.set_id(ctx.author.id)
 
         trashlist = json.load(open(os.path.join(util.LOC,"fishes.json"),"r"))["trash"]
-
-        if sum(gk(ctx.author.id, ["items",x,"amount"]) for x in trashlist) < amount:
-            await ctx.send("You can't recycle that much trash!")
-            return
 
         rm_success = cur_profile.rm_random(
             trashlist,
@@ -176,7 +172,7 @@ class fishing(commands.Cog):
         brief="Shows a leaderboard",
         help="Lets you see a leaderboard with ![leaderboard|lb] <item>.\nFor items with spaces, replace them with hyphens (-) or underscores (_)."
         )
-    async def fs_leaderboard(self, ctx, key=None):
+    async def fs_leaderboard(self, ctx, *, key=None):
         if key is None:
             await ctx.send("You need to provide a key!")
             return
@@ -190,11 +186,11 @@ class fishing(commands.Cog):
         if key in key_locs.keys():
             candidates = []
 
-            sum = 0
+            se_sum = 0
             for x in profiles.keys():
                 try:
                     candidates.append((profiles[x]["display_name"], gk(x, key_locs[key], profile=profiles)))
-                    sum += candidates[-1][1]
+                    se_sum += candidates[-1][1]
                 except:
                     continue
             
@@ -207,7 +203,7 @@ class fishing(commands.Cog):
 
             output = f"Leaderboard for *{key}*:\n"
             output += "".join(f"{i}. {val[0]} - **{round(val[1],1)}**\n" for i,val in enumerate(candidates))
-            output += f"\nServer total: **{round(sum,1)}**"
+            output += f"\nServer total: **{round(se_sum,1)}**"
 
             await ctx.send(output)
         else:
@@ -237,7 +233,7 @@ class fishing(commands.Cog):
             if item is None:
                 item,item_amt = (item_amt, 1)
             elif item.isnumeric():
-                item,item_amt = (item_amt,item)
+                item,item_amt = (item_amt,int(item))
             else:
                 await ctx.send("Unsure what you want. Please provide either an item or an item and an amount.")
                 return
@@ -281,6 +277,7 @@ class fishing(commands.Cog):
 
         if item_amt == 0:
             await ctx.send("Cannot buy any more of this item!")
+            return
 
         price = [sum([x(amount + y) for y in range(item_amt)]) for x in shop.SHOP[item]["price"]]
 

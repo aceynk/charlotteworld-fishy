@@ -4,6 +4,7 @@ import json
 import discord
 import operator
 import time
+import random
 
 import asyncio as asy
 
@@ -74,39 +75,70 @@ class profiles(commands.Cog):
         help="Allows you to see your profile by running !p[rofile].\n Shows stats like your money, fish caught, general items, etc.",
         description="See your profile"
         )
-    async def fs_profile(self,ctx):
-        util.profile_check(ctx.author)
-        util.update_bait(ctx.author)
+    async def fs_profile(self,ctx,user: discord.Member = None):
+        if not (user is None):
+            acc_id = str(user.id)
+            self.id = acc_id
 
-        acc_id = str(ctx.author.id)
-        self.id = acc_id
+            try: 
+                # works like an assert statement
+                # smth like:
+                # assert "pronouns" in user profile
+                # also assigns to a variable :D
+                pronouns = gk(acc_id,"pronouns")
+
+                index = random.randrange(len(pronouns["subject"]))
+
+                reference = [
+                    pronouns["subject"][index],
+                    pronouns["possessive"][index],
+                    pronouns["have"][index]
+                ]
+            except Exception as e:
+                print(e)
+                reference = ["They","Their","have"]
+
+        else:
+            util.profile_check(ctx.author)
+            util.update_bait(ctx.author)
+
+            acc_id = str(ctx.author.id)
+            self.id = acc_id
+
+            user = ctx.author
+
+            reference = ["You","Your","have"]
+
         fishes = json.load(open(os.path.join(util.LOC,"fishes.json"),"r"))
 
-        output = f"## Fishy Profile for {util.get_nick(ctx.author)}"
-        output += f"\nYou have **{round(gk(acc_id, 'money'),1)}** FishCoin(s)"
-        output += f"\nYou have **{round(gk(acc_id, 'bait'),1)}** bait."
-        output += f"\nYou have **{util.format_time(3600 - (round(time.time()) - gk(acc_id, 'last_bait')))}** until your next bait."
-        
+        output = f"## Fishy Profile for {util.get_nick(user)}"
+        output += f"\n{reference[0].title()} {reference[2].lower()} **{round(gk(acc_id, 'money'),1)}** FishCoin(s)"
+        output += f"\n{reference[0].title()} {reference[2].lower()} **{round(gk(acc_id, 'bait'),1)}** bait."
+        if round(time.time()) - gk(acc_id, 'last_bait') <= 3600:
+            output += f"\n{reference[0].title()} {reference[2].lower()} **{util.format_time(3600 - (round(time.time()) - gk(acc_id, 'last_bait')))}** until your next bait."
+        else: 
+            output += f"\n{reference[0].title()} {reference[2].lower()} **{util.format_time(3600 - (round(time.time()) - gk(acc_id, 'last_bait')) % 3600)}** until {reference[1].lower()} next bait."
+
         if "optimized_bait" in gk(acc_id, "upgrades") and gk(acc_id, ["upgrades","optimized_bait","amount"]) > 0:
-            output += f'\nYou get **{round(1 + 0.2 * gk(acc_id, ["upgrades","optimized_bait","amount"]),1)}** bait per hour.'
+            output += f'\n{reference[0].title()} {"gets" if reference[2].endswith("s") else "get"} **{round(1 + 0.2 * gk(acc_id, ["upgrades","optimized_bait","amount"]),1)}** bait per hour.'
 
         if "estrogen" in gk(acc_id, "upgrades") and gk(acc_id, ["upgrades","estrogen","amount"]) > 0:
-            output += f'\nYou have **{gk(acc_id, ["upgrades","estrogen","amount"])}** estrogen!'
+            output += f'\n{reference[0].title()} {reference[2].lower()} **{gk(acc_id, ["upgrades","estrogen","amount"])}** estrogen!'
         
         weights = self.get_base_weights()
-        output += f"\n\nYou have a **{weights[0]/10}**% chance to catch a Normal fish."
+        output += f"\n\n{reference[0].title()} {reference[2].lower()} a **{weights[0]/10}**% chance to catch a Normal fish."
 
         if len(set(gk(self.id, "fish").keys()).intersection([x["name"] for x in fishes["difficult"]["catches"]])) > 0:
-            output += f"\nYou have a **{round(weights[1]/10,1)}**% chance to catch a *Difficult* fish."
+            output += f"\n{reference[0].title()} {reference[2].lower()} a **{round(weights[1]/10,1)}**% chance to catch a *Difficult* fish."
         
         if len(set(gk(self.id, "fish").keys()).intersection([x["name"] for x in fishes["challenging"]["catches"]])) > 0:
-            output += f"\nYou have a **{round(weights[2]/10,1)}**% chance to catch a **Challenging** fish."
+            output += f"\n{reference[0].title()} {reference[2].lower()} a **{round(weights[2]/10,1)}**% chance to catch a **Challenging** fish."
 
         if len(set(gk(self.id, "fish").keys()).intersection([x["name"] for x in fishes["legendary"]["catches"]])) > 0:
-            output += f"\nYou have a **{round(weights[3]/10,1)}**% chance to catch a *LEGENDARY* fish."
+            output += f"\n{reference[0].title()} {reference[2].lower()} a **{round(weights[3]/10,1)}**% chance to catch a *LEGENDARY* fish."
 
         if gk(self.id, "uniques"):
-            output += f"\nYou have a **{round(weights[4]/10,1)}**% chance to catch a **UNIQUE** fish."
+            output += f"\n{reference[0].title()} {reference[2].lower()} a **{round(weights[4]/10,1)}**% chance to catch a **UNIQUE** fish."
 
 
         output += "\n"
@@ -114,16 +146,16 @@ class profiles(commands.Cog):
 
         for key,val in gk(self.id, ["fish"]).items():
             if val["amount"] > 0:
-                output += f"\nYou have **{val['amount']}** {key}(s)! ({emoji.get_emoji(key)})"
+                output += f"\n{reference[0].title()} {reference[2].lower()} **{val['amount']}** {key}(s)! ({emoji.get_emoji(key)})"
 
         output += "\n"
 
         for key,val in gk(self.id, ["items"]).items():
             if val["amount"] > 0:
-                output += f"\nYou have **{val['amount']}** {key}(s)! ({emoji.get_emoji(key)})"
+                output += f"\n{reference[0].title()} {reference[2].lower()} **{val['amount']}** {key}(s)! ({emoji.get_emoji(key)})"
 
         if gk(self.id, "uniques"):
-            output += "\n\nYou have the following Uniques:\n"
+            output += f"\n\n{reference[0].title()} {reference[2].lower()} the following Uniques:\n"
 
             for i in set(gk(self.id, "uniques")):
                 output += f"**{i}**\n"
@@ -135,10 +167,15 @@ class profiles(commands.Cog):
 
     @commands.command(
         name="trade",
-        aliases=["gift"]
+        aliases=["gift"],
+        brief="Trade items",
+        help="Trade items with another player! Use ![trade|gift] <amount> <item> <user>\nThe user parameter works with many inputs, including ids and pings!",
+        description="The trade command"
     )
     async def fs_trading(self,ctx,amt,item,user:discord.Member):
         key_locs = json.load(open(os.path.join(util.LOC, "key_loc.json"),"r"))
+
+        item = item.replace("-"," ").replace("_", " ")
 
         if item in key_locs.keys():
             item_loc = key_locs[item]
@@ -160,20 +197,45 @@ class profiles(commands.Cog):
             await ctx.send("You can't gift negative items!")
             return
         
-
-        
         ak(ctx.author.id, item_loc, -int(amt))
         ak(user.id, item_loc, int(amt))
 
         await ctx.send(f"Successfully traded **{int(amt)}** {item.title()} to *{user.display_name}*!")
         
-
-        
-
             
     @commands.command(hidden=True)
     async def tooie(self,ctx):
         await ctx.send("hi tooie!")
+
+
+    @commands.command(
+        name="pronouns",
+        aliases=["pronoun"],
+        brief="Set your pronouns",
+        help="Use !pronoun[s] <subject1>|<subject2>|<...>/<possessive1>|<possessive2>|<...>/<'have' conj.1>|<'have' conj.2>|<...> to set a list of pronouns for the bot to use.\nFor example, They|She/Their|Her/Have|Has is the correct form for they/them and she/her pronouns."
+        )
+    async def pronouns(self,ctx,pronounstr):
+        sets = pronounstr.split("/")
+
+        if len(sets) != 3:
+            await ctx.send("I need you to provide info for all three sections!\nPersonal subject, personal possessive, and 'have' conjugations.\nUse !help pronouns for more info.")
+            return
+
+        sets = [x.split("|") for x in sets]
+
+        if not (len(sets[0]) == len(sets[1]) == len(sets[2])):
+            await ctx.send("You need to provide an equal amount of arguments for each section!\nUse !help pronouns for more info.")
+            return
+        
+        sets = [[util.sanitize(y) for y in x] for x in sets]
+
+        sk(ctx.author.id, "pronouns", {
+            "subject": sets[0],
+            "possessive": sets[1],
+            "have": sets[2]
+            })
+        
+        await ctx.send("Successfully set your pronouns! You should see them when people check your profile! :D")
 
 
     def add_items(self, items):

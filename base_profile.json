@@ -7,5 +7,10 @@
     "upgrades": {},
     "consumables": {},
     "uniques": [],
-    "display_name": ""
+    "display_name": "",
+    "pronouns": {
+        "subject": [],
+        "possessive": [],
+        "have": []
+    }
 }
