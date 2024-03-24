@@ -88,7 +88,10 @@ class profiles(commands.Cog):
         output += f"\nYou have **{util.format_time(3600 - (round(time.time()) - gk(acc_id, 'last_bait')))}** until your next bait."
         
         if "optimized_bait" in gk(acc_id, "upgrades") and gk(acc_id, ["upgrades","optimized_bait","amount"]) > 0:
-            output += f'\nYou get **{round(1 + 0.2 * gk(acc_id, ["upgrades","optimized_bait","amount"]),1)}** bait per hour'
+            output += f'\nYou get **{round(1 + 0.2 * gk(acc_id, ["upgrades","optimized_bait","amount"]),1)}** bait per hour.'
+
+        if "estrogen" in gk(acc_id, "upgrades") and gk(acc_id, ["upgrades","estrogen","amount"]) > 0:
+            output += f'\nYou have **{gk(acc_id, ["upgrades","estrogen","amount"])}** estrogen!'
         
         weights = self.get_base_weights()
         output += f"\n\nYou have a **{weights[0]/10}**% chance to catch a Normal fish."
@@ -128,6 +131,12 @@ class profiles(commands.Cog):
         for i in util.split_message(output):
             await ctx.send(i)
             await asy.sleep(0.5)
+
+
+    #@commands.command(
+        
+    #)
+    #async def fs_trading(self,ctx)
 
 
     def add_items(self, items):
@@ -175,12 +184,35 @@ class profiles(commands.Cog):
     
 
     def get_base_weights(self):
+        upgrade_bonus = [0,0,0,0]
+
+        if "difficult_bait" in gk(self.id, "upgrades").keys():
+            upgrade_bonus[0] = 10 * gk(self.id, ["upgrades","difficult_bait","amount"])
+        if "challenging_bait" in gk(self.id, "upgrades").keys():
+            upgrade_bonus[1] = 8 * gk(self.id, ["upgrades","challenging_bait","amount"])
+        if "legendary_bait" in gk(self.id, "upgrades").keys():
+            upgrade_bonus[2] = 6 * gk(self.id, ["upgrades","legendary_bait","amount"])
+        if "special_bait" in gk(self.id, "upgrades").keys():
+            upgrade_bonus[3] = 4 * gk(self.id, ["upgrades","special_bait","amount"])
+
         if "trash" in gk(self.id,"consumables").keys():
             trash_rec = min(475, gk(self.id,["consumables","trash","amount"]))
 
-            return [950 - 2 * trash_rec, 40 + trash_rec, 6 + trash_rec, 3, 1]
+            return [
+                950 - 2 * trash_rec,
+                40 + trash_rec + upgrade_bonus[0],
+                6 + trash_rec + upgrade_bonus[1],
+                3 + upgrade_bonus[2],
+                1 + upgrade_bonus[3]
+                ]
         else:
-            return [950, 40, 6, 3, 1]
+            return [
+                950,
+                40 + upgrade_bonus[0],
+                6 + upgrade_bonus[1],
+                3 + upgrade_bonus[2],
+                1 + upgrade_bonus[3]
+                ]
         
 
     def clear_weight_bonus(self):

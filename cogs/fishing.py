@@ -124,7 +124,7 @@ class fishing(commands.Cog):
         cur_profile.add_fish(catch["name"])
         ak(ctx.author.id, "money", coins)
                 
-        await ctx.send(output + f"\nCoins Earned: {coins}\n\n" + emoji_output)
+        await ctx.send(output + f"\nCoins Earned: {round(coins,1)}\n\n" + emoji_output)
 
 
     @commands.command(
@@ -208,8 +208,22 @@ class fishing(commands.Cog):
         help="Buy items and upgrades with !shop <item>, or view the shop listing with !shop.",
         description="Command to buy things"
         )
-    async def fs_shop(self,ctx,*,item=None):
+    async def fs_shop(self,ctx,item_amt=None,*,item=None):
         user_prof = json.load(open(os.path.join(util.LOC, "profiles.json"),"r"))[str(ctx.author.id)]
+
+        if not item_amt is None and not item_amt.isnumeric():
+            if item is None:
+                item = item_amt
+                item_amt = 1
+            else:
+                await ctx.send("Please provide a numeric amount for shop items, or run without an amount to buy 1.")
+
+        if not item_amt is None and item is None:
+            await ctx.send("Unsure what you want. Run !shop or !buy to see a list of items.")
+            return
+        
+        if not item_amt is None:
+            item_amt = int(item_amt)
 
         if item is None:
             shoptext = "## Fishy Shop\nBuy items with !shop <item>\n\n"
@@ -221,11 +235,17 @@ class fishing(commands.Cog):
                     sk(ctx.author.id, ["upgrades",upgrade], {"amount": 0})
                     amount = 0
 
+                if shop.SHOP[upgrade]["limit"] == amount and shop.SHOP[upgrade]["limit"] != -1:
+                    continue
+
                 price = [x(amount) for x in shop.SHOP[upgrade]["price"]]
-                shoptext += f"* {upgrade.replace('_',' ').title()} - " + ", ".join(f"{shop.SHOP[upgrade]['item_name'][ind]} {emoji.get_emoji(shop.SHOP[upgrade]['item_name'][ind])} **x{v}**" for ind, v in enumerate(price) if v != 0) + f"\n * {shop.SHOP[upgrade]['description']}"
+                shoptext += f"* {upgrade.replace('_',' ').title()} - " + ", ".join(f"{shop.SHOP[upgrade]['item_name'][ind]} {emoji.get_emoji(shop.SHOP[upgrade]['item_name'][ind])} **x{v}**" for ind, v in enumerate(price) if v != 0) + f"\n * {shop.SHOP[upgrade]['description']}\n"
 
             await ctx.send(shoptext)
             return
+        
+        if item_amt is None:
+            item_amt = 1
 
         if item.lower().replace(" ","_") in shop.SHOP.keys():
             item = item.lower().replace(" ","_")
@@ -239,17 +259,21 @@ class fishing(commands.Cog):
             sk(ctx.author.id, ["upgrades",item], {"amount": 0})
             amount = 0
 
-        price = [x(amount) for x in shop.SHOP[item]["price"]]
+        if shop.SHOP[item]["limit"] != -1:
+            item_amt = min(amount + item_amt, shop.SHOP[item]["limit"]) - amount
+
+        if item_amt == 0:
+            await ctx.send("Cannot buy any more of this item!")
+
+        price = [sum([x(amount + y) for y in range(item_amt)]) for x in shop.SHOP[item]["price"]]
 
         if (itemset := set(v for i,v in enumerate(shop.SHOP[item]["item_name"]) if price[i] != 0)).intersection(gk(ctx.author.id, "upgrades").keys()) == len(itemset):
-            print("fails at first.")
             ctx.send("You don't have enough to trade for this item!")
             return
 
         sufficient_check = all(v <= gk(ctx.author.id, shop.SHOP[item]["item_path"][i]) for i,v in enumerate(price) if v != 0)
 
         if not sufficient_check:
-            print("fails at second")
             await ctx.send("You don't have enough to trade for this item!")
             return
         else:
@@ -260,11 +284,11 @@ class fishing(commands.Cog):
                 ak(ctx.author.id, shop.SHOP[item]["item_path"][i], -v)
 
             if item in gk(ctx.author.id, "upgrades").keys():
-                ak(ctx.author.id, ["upgrades",item,"amount"], 1)
+                ak(ctx.author.id, ["upgrades",item,"amount"], item_amt)
             else:
-                sk(ctx.author.id, ["upgrades", item], {"amount": 1})
+                sk(ctx.author.id, ["upgrades", item], {"amount": item_amt})
 
-            await ctx.send(f"Successfully bought 1 {item.title().replace('_',' ')}")
+            await ctx.send(f"Successfully bought {item_amt} {item.title().replace('_',' ')}")
 
 
 async def setup(bot):

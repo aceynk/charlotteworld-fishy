@@ -15,6 +15,7 @@ class emoji(commands.Cog):
             "Minnow": "🐟",
             "Halibut": "🐠",
             "Smelt": "🐟",
+            "Milkfish": "🎣",
 
             "Salmon": "🐠",
             "Crab": "🦀",
