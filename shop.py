@@ -34,10 +34,10 @@ SHOP = {
     },
     "difficult_bait": {
         "price": [
-            (lambda x : 30 * x + 10),
-            (lambda x : 30 * x + 10),
-            (lambda x : 30 * x + 10),
-            (lambda x : 30 * x + 10),
+            (lambda x : 10 * (x+1)),
+            (lambda x : 10 * (x+1)),
+            (lambda x : 10 * (x+1)),
+            (lambda x : 10 * (x+1)),
             (lambda x : 3 * x + 2)
         ],
         "item_name": [
@@ -59,10 +59,10 @@ SHOP = {
     },
     "challenging_bait": {
         "price": [
-            (lambda x : 30 * x + 10),
-            (lambda x : 30 * x + 10),
-            (lambda x : 30 * x + 10),
-            (lambda x : 30 * x + 10),
+            (lambda x : 8 * (x+1)),
+            (lambda x : 8 * (x+1)),
+            (lambda x : 8 * (x+1)),
+            (lambda x : 8 * (x+1)),
             (lambda x : 5 * x + 5)
         ],
         "item_name": [
@@ -84,8 +84,8 @@ SHOP = {
     },
     "legendary_bait": {
         "price": [
-            (lambda x : 30 * x + 10),
-            (lambda x : 30 * x + 10),
+            (lambda x : 6 * (x+1)),
+            (lambda x : 6 * (x+1)),
             (lambda x : 10 * x + 10)
         ],
         "item_name": [
@@ -103,7 +103,7 @@ SHOP = {
     },
     "special_bait": {
         "price": [
-            (lambda x : 30 * x + 10),
+            (lambda x : 4 * (x+1)),
             (lambda x : 20 * x + 20)
         ],
         "item_name": [
@@ -116,5 +116,18 @@ SHOP = {
         ],
         "description": "Increases the chance to catch... something?",
         "limit": 2
+    },
+    "extra_bait": {
+        "price": [
+            (lambda x : 1)
+        ],
+        "item_name": [
+            "Seaweed"
+        ],
+        "item_path": [
+            ["items","Seaweed","amount"]
+        ],
+        "description": "Gives you an extra helping of bait.",
+        "limit": -1
     }
 }

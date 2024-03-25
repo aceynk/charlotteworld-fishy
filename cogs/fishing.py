@@ -138,7 +138,7 @@ class fishing(commands.Cog):
             await ctx.send("You need to provide an amount! Please provide an integer or \"all\".")
             return
         
-        if amount.isnumeric() and int(amount) < 0:
+        if (amount.isnumeric() or amount[1:].isnumeric()) and int(amount) < 0:
             await ctx.send("You can't recycle negative trash!")
             return
 
@@ -300,7 +300,13 @@ class fishing(commands.Cog):
             if item in gk(ctx.author.id, "upgrades").keys():
                 ak(ctx.author.id, ["upgrades",item,"amount"], item_amt)
             else:
-                sk(ctx.author.id, ["upgrades", item], {"amount": item_amt})
+                if not item == "extra bait":
+                    sk(ctx.author.id, ["upgrades", item], {"amount": item_amt})
+                else:
+                    if "optimized_bait" in gk(ctx.author.id, ["upgrades"]).keys(): 
+                        ak(ctx.author.id, "money", item_amt * (1 + 0.2 * gk(ctx.author.id, ["upgrades","optimized_bait","amount"])))
+                    else:
+                        ak(ctx.author.id, "money", item_amt)
 
             await ctx.send(f"Successfully bought {item_amt} {item.title().replace('_',' ')}")
 

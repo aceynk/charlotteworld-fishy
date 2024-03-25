@@ -115,7 +115,7 @@ class profiles(commands.Cog):
         output += f"\n{reference[0].title()} {reference[2].lower()} **{round(gk(acc_id, 'money'),1)}** FishCoin(s)"
         output += f"\n{reference[0].title()} {reference[2].lower()} **{round(gk(acc_id, 'bait'),1)}** bait."
         if round(time.time()) - gk(acc_id, 'last_bait') <= 3600:
-            output += f"\n{reference[0].title()} {reference[2].lower()} **{util.format_time(3600 - (round(time.time()) - gk(acc_id, 'last_bait')))}** until your next bait."
+            output += f"\n{reference[0].title()} {reference[2].lower()} **{util.format_time(3600 - (round(time.time()) - gk(acc_id, 'last_bait')))}** until {reference[1].lower()} next bait."
         else: 
             output += f"\n{reference[0].title()} {reference[2].lower()} **{util.format_time(3600 - (round(time.time()) - gk(acc_id, 'last_bait')) % 3600)}** until {reference[1].lower()} next bait."
 
@@ -184,23 +184,30 @@ class profiles(commands.Cog):
             return
 
         owned_amt = gk(ctx.author.id, item_loc)
-
-        if int(amt) > owned_amt:
-            await ctx.send("You can't gift more than you have.")
-            return
         
-        if not amt.isnumeric():
+        try:
+            float(amt)
+        except:
             await ctx.send("You need to provide a numeric amount to gift!")
             return
         
-        if int(amt) < 0:
+        amt = round(float(amt),1)
+
+        if not item == "money" and not item == "fishcoin" and not item == "bait":
+            amt = round(amt)
+
+        if amt > owned_amt:
+            await ctx.send("You can't gift more than you have.")
+            return
+        
+        if amt < 0:
             await ctx.send("You can't gift negative items!")
             return
         
-        ak(ctx.author.id, item_loc, -int(amt))
-        ak(user.id, item_loc, int(amt))
+        ak(ctx.author.id, item_loc, -amt)
+        ak(user.id, item_loc, amt)
 
-        await ctx.send(f"Successfully traded **{int(amt)}** {item.title()} to *{user.display_name}*!")
+        await ctx.send(f"Successfully traded **{amt}** {item.title()} to *{user.display_name}*!")
         
             
     @commands.command(hidden=True)
